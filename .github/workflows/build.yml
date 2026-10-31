@@ -1,9 +1,9 @@
-
-name: Build APK
+name: Build REX Team APK
 
 on:
   push:
     branches: [ main ]
+  workflow_dispatch:
 
 jobs:
   build:
@@ -11,19 +11,40 @@ jobs:
 
     steps:
     - name: Checkout code
-      uses: actions/checkout@v3
+      uses: actions/checkout@v4
 
     - name: Set up JDK 17
-      uses: actions/setup-java@v3
+      uses: actions/setup-java@v4
       with:
-        distribution: 'temurin'
+        distribution: temurin
         java-version: '17'
 
-    - name: Build with Gradle
-      run: ./gradlew assembleDebug
+    - name: Set up Android SDK
+      uses: android-actions/setup-android@v3
+      with:
+        packages: 'platform-tools'
+
+    - name: Install Android SDK packages
+      run: |
+        sdkmanager "platforms;android-35" "build-tools;35.0.0"
+
+    - name: Set up Gradle
+      uses: gradle/actions/setup-gradle@v6
+      with:
+        gradle-version: '8.7'
+
+    - name: Extract Android project
+      run: |
+        unzip -q rex-team-gaming-soundboard.zip -d outer
+        unzip -q outer/public/REX_Team_Android_Source.zip -d android
+        ls -la android/REX_Team_Android_Source
+
+    - name: Build APK
+      run: |
+        gradle -p android/REX_Team_Android_Source assembleDebug --no-daemon
 
     - name: Upload APK
       uses: actions/upload-artifact@v4
       with:
-        name: app-debug
-        path: app/build/outputs/apk/debug/app-debug.apk
+        name: REX-Team-APK
+        path: android/REX_Team_Android_Source/app/build/outputs/apk/debug/*.apk
